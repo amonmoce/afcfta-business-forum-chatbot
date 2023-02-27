@@ -34,3 +34,4 @@ gunicorn
 matplotlib
 plotly
 scipy
+sklearn
