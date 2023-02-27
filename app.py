@@ -2,7 +2,8 @@ import os
 import pandas as pd
 
 import openai
-from openai.embeddings_utils import get_embedding, distances_from_embeddings
+from openai.embeddings_utils import get_embedding
+from scipy.spatial import distance
 
 from flask import Flask, redirect, render_template, request, url_for
 
@@ -21,7 +22,7 @@ def index():
         # Get preprocessed embeddings
         qa = pd.read_csv('./processed_knowledge_base.csv')
         # Get the distances from the embeddings
-        qa['distances'] = distances_from_embeddings(q_embeddings, qa['embedding'].values, distance_metric='cosine')
+        qa['distances'] = qa.embedding.apply(lambda x: distance.cosine(x, q_embeddings))
         relevant_text = qa.sort_values('distances', ascending=True)['text'][0]
         response = response = openai.Completion.create(
             prompt=generate_prompt(relevant_text, question),
