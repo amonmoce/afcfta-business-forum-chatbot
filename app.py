@@ -21,8 +21,9 @@ def index():
         # Get preprocessed embeddings
         qa = pd.read_csv('./processed_knowledge_base.csv')
         # Get the distances from the embeddings
-        qa['distances'] = distances_from_embeddings(q_embeddings, qa.embedding.tolist(), distance_metric='cosine')
-        relevant_text = qa.sort_values('distances', ascending=True)['text'][0]+" "+qa.sort_values('distances', ascending=True)['text'][1]
+        # qa['distances'] = distances_from_embeddings(q_embeddings, qa.embedding.tolist(), distance_metric='cosine')
+        # relevant_text = qa.sort_values('distances', ascending=True)['text'][0]+" "+qa.sort_values('distances', ascending=True)['text'][1]
+        relevant_text = ""
         response = response = openai.Completion.create(
             prompt=generate_prompt(relevant_text, question),
             temperature=0,
