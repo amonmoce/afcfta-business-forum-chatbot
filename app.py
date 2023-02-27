@@ -6,8 +6,10 @@ from openai.embeddings_utils import get_embedding, distances_from_embeddings, co
 import pinecone
 
 from flask import Flask, redirect, render_template, request, url_for
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # Openai setup
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -21,6 +23,7 @@ pinecone_index_name = 'afcfta-business-forum-chatbot'
 pinecone_index = pinecone.Index(pinecone_index_name)
 
 @app.route("/", methods=("GET", "POST"))
+@cross_origin()
 def index():
     if request.method == "POST":
         question = request.get_json()["question"]
