@@ -32,3 +32,4 @@ Werkzeug==2.0.2
 yarl==1.8.2
 gunicorn
 matplotlib
+plotly
