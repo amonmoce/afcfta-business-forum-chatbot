@@ -3,27 +3,37 @@ import pandas as pd
 
 import openai
 from openai.embeddings_utils import get_embedding, distances_from_embeddings, cosine_similarity
+import pinecone
 
 from flask import Flask, redirect, render_template, request, url_for
 
 app = Flask(__name__)
-app.debug = True
 
+# Openai setup
 openai.api_key = os.getenv("OPENAI_API_KEY")
 embedding_model = "text-embedding-ada-002"
 gpt_model = "text-davinci-003"
 
+# Pinecone setup
+PINECONE_KEY = os.getenv("PINECONE_KEY")
+pinecone.init(PINECONE_KEY, environment='us-west1-gcp')
+index_name = 'afcfta-business-forum-chatbot'
+index = pinecone.Index(index_name)
+
 @app.route("/", methods=("GET", "POST"))
 def index():
     if request.method == "POST":
-        question = request.form["question"]
+        question = request.get_json()["question"]
         q_embeddings = get_embedding(question, engine=embedding_model)
         # Get preprocessed embeddings
-        qa = pd.read_csv('./processed_knowledge_base.csv')
+        # qa = pd.read_csv('./processed_knowledge_base.csv')
         # Get the distances from the embeddings
-        qa['distances'] = qa.embedding.apply(lambda x: cosine_similarity(x, q_embeddings))
-        relevant_text = qa.sort_values('distances', ascending=True)['text'][0]+" "+qa.sort_values('distances', ascending=True)['text'][1]
+        # qa['distances'] = qa.embedding.apply(lambda x: cosine_similarity(x, q_embeddings))
+        # relevant_text = qa.sort_values('distances', ascending=True)['text'][0]+" "+qa.sort_values('distances', ascending=True)['text'][1]
         # relevant_text = ""
+        res = index.query(q_embeddings, top_k=10, include_metadata=True)
+        relevant_text = [m['metadata']['text']+" " for m in res['matches']]
+
         response = response = openai.Completion.create(
             prompt=generate_prompt(relevant_text, question),
             temperature=0,
