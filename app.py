@@ -17,8 +17,8 @@ gpt_model = "text-davinci-003"
 # Pinecone setup
 PINECONE_KEY = os.getenv("PINECONE_KEY")
 pinecone.init(PINECONE_KEY, environment='us-west1-gcp')
-index_name = 'afcfta-business-forum-chatbot'
-index = pinecone.Index(index_name)
+pinecone_index_name = 'afcfta-business-forum-chatbot'
+pinecone_index = pinecone.Index(pinecone_index_name)
 
 @app.route("/", methods=("GET", "POST"))
 def index():
@@ -31,7 +31,7 @@ def index():
         # qa['distances'] = qa.embedding.apply(lambda x: cosine_similarity(x, q_embeddings))
         # relevant_text = qa.sort_values('distances', ascending=True)['text'][0]+" "+qa.sort_values('distances', ascending=True)['text'][1]
         # relevant_text = ""
-        res = index.query(q_embeddings, top_k=10, include_metadata=True)
+        res = pinecone_index.query(q_embeddings, top_k=10, include_metadata=True)
         relevant_text = [m['metadata']['text']+" " for m in res['matches']]
 
         response = response = openai.Completion.create(
