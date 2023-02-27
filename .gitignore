@@ -16,3 +16,7 @@ build/
 .DS_STORE
 
 .env
+
+bin/
+lib/
+pyvenv.cfg
