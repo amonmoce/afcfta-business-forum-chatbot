@@ -23,7 +23,7 @@ pinecone_index_name = 'afcfta-business-forum-chatbot'
 pinecone_index = pinecone.Index(pinecone_index_name)
 
 @app.route("/", methods=("GET", "POST"))
-@cross_origin()
+# @cross_origin()
 def index():
     if request.method == "POST":
         question = request.get_json()["question"]
@@ -37,7 +37,7 @@ def index():
         res = pinecone_index.query(q_embeddings, top_k=10, include_metadata=True)
         relevant_text = [m['metadata']['text']+" " for m in res['matches']]
 
-        response = response = openai.Completion.create(
+        openai_response = openai.Completion.create(
             prompt=generate_prompt(relevant_text, question),
             temperature=0,
             max_tokens=128,
@@ -47,7 +47,7 @@ def index():
             stop=["###", "\n\n"],
             model=gpt_model
         )
-        return response.choices[0].text.strip()
+        return openai_response.choices[0].text.strip()
 
     result = request.args.get("result")
     return render_template("index.html", result=result)
