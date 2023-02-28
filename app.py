@@ -46,7 +46,7 @@ def index():
             stop=["###", "\n\n"],
             model=gpt_model
         )
-        if openai_response.choices[0].text.strip() != "Please contact the AfCFTA for this particular question":
+        if openai_response.choices[0].text.strip() not in ["Please contact the AfCFTA for this particular question.", "Please contact the AfCFTA for this particular question"]:
             return jsonify({
                 'bot': openai_response.choices[0].text.strip()
             })
