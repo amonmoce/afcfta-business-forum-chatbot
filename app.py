@@ -46,14 +46,30 @@ def index():
             stop=["###", "\n\n"],
             model=gpt_model
         )
-        
-        return jsonify({
-            'bot': openai_response.choices[0].text.strip()
-        })
-
+        if openai_response.choices[0].text.strip() != "Please contact the AfCFTA for this particular question":
+            return jsonify({
+                'bot': openai_response.choices[0].text.strip()
+            })
+        else:
+            alternative_openai_response = openai.Completion.create(
+                prompt=generate_alternative_prompt(question),
+                temperature=0,
+                max_tokens=128,
+                # top_p=1,
+                # frequency_penalty=0,
+                # presence_penalty=0,
+                stop=["###", "\n\n"],
+                model=gpt_model
+            )
+            return jsonify({
+                'bot': alternative_openai_response.choices[0].text.strip()
+            })
     result = request.args.get("result")
     return render_template("index.html", result=result)
 
 
 def generate_prompt(relevant_text, question):
     return f"Answer the question based on the context below, and if the question can't be answered based on the context, say \"Please contact the AfCFTA for this particular question\"\n\nContext: {relevant_text}\n\n---\n\nQuestion: {question}\nAnswer:"
+
+def generate_alternative_prompt(question):
+    return f"Imagine a conversation between a customer service agent in charge of answering questions on the AfCFTA Business Forum, and a person interested in the forum\"\n\Interested: {question}\n\n---\n\nAgent:"
