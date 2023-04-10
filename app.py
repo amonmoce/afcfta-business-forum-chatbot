@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import json
+import requests
 
 import openai
 from openai.embeddings_utils import get_embedding, distances_from_embeddings, cosine_similarity
@@ -74,7 +75,7 @@ def index():
 
 
 @app.route("/webhook", methods=("GET", "POST"))
-def index():
+def webhook():
     if request.method == "POST":
         # Parse the request body from the POST
         body = request.get_json()
