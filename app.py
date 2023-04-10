@@ -101,7 +101,7 @@ def webhook():
                                     "content": f"Classify the following prompt into question, greeting or other: \"{msg_body}\"."
                     }]
                 )
-                
+                print("The tone is: "+tone)
                 if tone == "question.":
                     # search similarities in knowledge base
                     q_embeddings = get_embedding(msg_body, engine=embedding_model)
