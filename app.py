@@ -97,24 +97,24 @@ def webhook():
                 res = pinecone_index.query(q_embeddings, top_k=10, include_metadata=True)
                 relevant_text = [m['metadata']['text']+" " for m in res['matches']]
 
-                # openai_response = openai.Completion.create(
-                #     prompt=generate_prompt(relevant_text, msg_body),
-                #     temperature=0,
-                #     max_tokens=128,
-                #     # top_p=1,
-                #     # frequency_penalty=0,
-                #     # presence_penalty=0,
-                #     stop=["###", "\n\n"],
-                #     model=gpt_model
-                # )
-                openai_response = openai.ChatCompletion.create(
-                    model=chatgpt_model, 
-                    messages = [
-                    {"role": "user",
-                    "content": generate_prompt(relevant_text, msg_body)}
-                    ]
+                openai_response = openai.Completion.create(
+                    prompt=generate_prompt(relevant_text, msg_body),
+                    temperature=0,
+                    max_tokens=128,
+                    # top_p=1,
+                    # frequency_penalty=0,
+                    # presence_penalty=0,
+                    stop=["###", "\n\n"],
+                    model=gpt_model
                 )
-                if openai_response.choices[0].message.content.strip() not in ["Please contact the AfCFTA for this particular question.", "Please contact the AfCFTA for this particular question"]:
+                # openai_response = openai.ChatCompletion.create(
+                #     model=chatgpt_model, 
+                #     messages = [
+                #     {"role": "user",
+                #     "content": generate_prompt(relevant_text, msg_body)}
+                #     ]
+                # )
+                if openai_response.choices[0].text.strip() not in ["Please contact the AfCFTA for this particular question.", "Please contact the AfCFTA for this particular question"]:
                     response = requests.post(
                         url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
                         json={
