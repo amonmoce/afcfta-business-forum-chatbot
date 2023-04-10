@@ -114,7 +114,7 @@ def webhook():
                     "content": generate_prompt(relevant_text, msg_body)}
                     ]
                 )
-                if openai_response.choices[0].text.strip() not in ["Please contact the AfCFTA for this particular question.", "Please contact the AfCFTA for this particular question"]:
+                if openai_response.choices[0].message.content.strip() not in ["Please contact the AfCFTA for this particular question.", "Please contact the AfCFTA for this particular question"]:
                     response = requests.post(
                         url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
                         json={
