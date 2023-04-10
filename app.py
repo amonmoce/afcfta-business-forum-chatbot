@@ -84,12 +84,13 @@ def webhook():
         print(json.dumps(body, indent=2))
 
         # info on WhatsApp text message payload: https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/payload-examples#text-messages
-        if body.get('object'):
+        if body:
             entry = body['entry'][0]
             if (changes := entry.get('changes')) and (change := changes[0]) and (value := change.get('value')) and (messages := value.get('messages')) and messages[0]:
                 phone_number_id = value['metadata']['phone_number_id']
                 from_number = messages[0]['from']  # extract the phone number from the webhook payload
                 msg_body = messages[0]['text']['body']  # extract the message text from the webhook payload
+                print(phone_number_id, from_number, msg_body, token)
                 response = requests.post(
                     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
                     json={
@@ -99,6 +100,7 @@ def webhook():
                     },
                     headers={"Content-Type": "application/json"},
                 )
+                print(response)
         return "OK", 200
     if request.method == "GET":
         # Update verify token
