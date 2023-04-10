@@ -98,7 +98,7 @@ def webhook():
                     model="gpt-3.5-turbo",
                                 messages= [{
                                     "role": "user",
-                                    "content": f"Is the following a question, an answer or neutral: \"{msg_body}\". Answer using one word."
+                                    "content": f"Classify the following prompt into question, greeting or other: \"{msg_body}\"."
                     }]
                 )
                 
