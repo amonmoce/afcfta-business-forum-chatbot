@@ -24,10 +24,6 @@ pinecone.init(PINECONE_KEY, environment='us-west1-gcp')
 pinecone_index_name = 'afcfta-business-forum-chatbot'
 pinecone_index = pinecone.Index(pinecone_index_name)
 
-# WhatsApp setup
-verify_token = os.getenv("VERIFY_TOKEN")
-token = os.getenv("WHATSAPP_TOKEN")
-
 @app.route("/", methods=("GET", "POST"))
 def index():
     if request.method == "POST":
@@ -76,6 +72,10 @@ def index():
 
 @app.route("/webhook", methods=("GET", "POST"))
 def webhook():
+    # WhatsApp setup
+    verify_token = os.getenv("VERIFY_TOKEN")
+    token = os.getenv("WHATSAPP_TOKEN")
+    
     if request.method == "POST":
         # Parse the request body from the POST
         body = request.get_json()
