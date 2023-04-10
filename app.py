@@ -17,6 +17,7 @@ CORS(app)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 embedding_model = "text-embedding-ada-002"
 gpt_model = "text-davinci-003"
+chatgpt_model = "gpt-3.5-turbo"
 
 # Pinecone setup
 PINECONE_KEY = os.getenv("PINECONE_KEY")
@@ -96,15 +97,22 @@ def webhook():
                 res = pinecone_index.query(q_embeddings, top_k=10, include_metadata=True)
                 relevant_text = [m['metadata']['text']+" " for m in res['matches']]
 
-                openai_response = openai.Completion.create(
-                    prompt=generate_prompt(relevant_text, msg_body),
-                    temperature=0,
-                    max_tokens=128,
-                    # top_p=1,
-                    # frequency_penalty=0,
-                    # presence_penalty=0,
-                    stop=["###", "\n\n"],
-                    model=gpt_model
+                # openai_response = openai.Completion.create(
+                #     prompt=generate_prompt(relevant_text, msg_body),
+                #     temperature=0,
+                #     max_tokens=128,
+                #     # top_p=1,
+                #     # frequency_penalty=0,
+                #     # presence_penalty=0,
+                #     stop=["###", "\n\n"],
+                #     model=gpt_model
+                # )
+                openai_response = openai.ChatCompletion.create(
+                    model=chatgpt_model, 
+                    messages = [
+                    {"role": "user",
+                    "content": generate_prompt(relevant_text, msg_body)}
+                    ]
                 )
                 if openai_response.choices[0].text.strip() not in ["Please contact the AfCFTA for this particular question.", "Please contact the AfCFTA for this particular question"]:
                     response = requests.post(
