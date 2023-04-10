@@ -93,7 +93,7 @@ def webhook():
                 from_number = messages[0]['from']  # extract the phone number from the webhook payload
                 msg_body = messages[0]['text']['body']  # extract the message text from the webhook payload
                 # print(phone_number_id, from_number, msg_body, token)
-                # Check intent
+                # Classify into question, greeting or other
                 tone = openai.ChatCompletion.create(
                     model="gpt-3.5-turbo",
                                 messages= [{
@@ -147,6 +147,25 @@ def webhook():
                             },
                             headers={"Content-Type": "application/json"},
                         )
+                elif tone == "greeting.":
+                    # greet
+                    # answer neutral intent
+                    greet = openai.ChatCompletion.create(
+                                model="gpt-3.5-turbo",
+                                            messages= [{
+                                                "role": "user",
+                                                "content": f"You are an information service agent. Respond to the user's following greeting: {msg_body}"
+                                }]
+                    )
+                    response = requests.post(
+                            url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                            json={
+                                "messaging_product": "whatsapp",
+                                "to": from_number,
+                                "text": {"body": greet.choices[0].message.content.strip() },
+                            },
+                            headers={"Content-Type": "application/json"},
+                    )
                 else:
                     # answer neutral intent
                     okay = openai.ChatCompletion.create(
