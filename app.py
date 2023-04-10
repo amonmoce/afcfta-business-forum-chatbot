@@ -94,13 +94,14 @@ def webhook():
                 msg_body = messages[0]['text']['body']  # extract the message text from the webhook payload
                 # print(phone_number_id, from_number, msg_body, token)
                 # Classify into question, greeting or other
-                tone = openai.ChatCompletion.create(
+                tone_completion = openai.ChatCompletion.create(
                     model="gpt-3.5-turbo",
                                 messages= [{
                                     "role": "user",
                                     "content": f"Classify the following prompt into question, greeting or other: \"{msg_body}\"."
                     }]
                 )
+                tone = tone_completion.choices[0].message.content.strip().lower()
                 print("The tone is: "+tone)
                 if tone == "question.":
                     # search similarities in knowledge base
