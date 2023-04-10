@@ -26,7 +26,7 @@ pinecone_index = pinecone.Index(pinecone_index_name)
 
 # WhatsApp setup
 verify_token = os.getenv("VERIFY_TOKEN")
-token = os.environ.get("WHATSAPP_TOKEN")
+token = os.getenv("WHATSAPP_TOKEN")
 
 @app.route("/", methods=("GET", "POST"))
 def index():
