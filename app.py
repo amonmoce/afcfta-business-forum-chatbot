@@ -136,7 +136,7 @@ def webhook():
                             model="gpt-3.5-turbo",
                                         messages= [{
                                             "role": "user",
-                                            "content": f"Say \"Please contact the AfCFTA for this particular question.\" in another way"
+                                            "content": f"Say \"You are an information service agent on the AfCFTA Business Forum. Respond to the user's following question: {msg_body}"
                             }]
                         )
                        response = requests.post(
