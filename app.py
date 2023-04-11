@@ -144,7 +144,7 @@ def webhook():
                             json={
                                 "messaging_product": "whatsapp",
                                 "to": from_number,
-                                "text": {"body": openai_response.choices[0].text.strip() },
+                                "text": {"body": contact.choices[0].text.strip() },
                             },
                             headers={"Content-Type": "application/json"},
                         )
