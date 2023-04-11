@@ -91,7 +91,11 @@ def webhook():
             if (changes := entry.get('changes')) and (change := changes[0]) and (value := change.get('value')) and (messages := value.get('messages')) and messages[0]:
                 phone_number_id = value['metadata']['phone_number_id']
                 from_number = messages[0]['from']  # extract the phone number from the webhook payload
-                msg_body = messages[0]['text']['body']  or messages[0]['button']['text'] # extract the message text from the webhook payload
+                msg_body = ""
+                if messages[0]['type'] == "text":
+                    msg_body = messages[0]['text']['body'] # extract the message text from the webhook payload
+                if messages[0]['type'] == "button":
+                    msg_body = messages[0]['button']['text'] # extract the message text from the webhook payload
                 # print(phone_number_id, from_number, msg_body, token)
                 # Classify into question, greeting or other
                 tone_completion = openai.ChatCompletion.create(
