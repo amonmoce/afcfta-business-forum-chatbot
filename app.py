@@ -7,6 +7,8 @@ import openai
 from openai.embeddings_utils import get_embedding, distances_from_embeddings, cosine_similarity
 import pinecone
 
+from supabase import create_client, Client
+
 from flask import Flask, redirect, render_template, request, url_for, jsonify
 from flask_cors import CORS
 
@@ -24,6 +26,11 @@ PINECONE_KEY = os.getenv("PINECONE_KEY")
 pinecone.init(PINECONE_KEY, environment='us-west1-gcp')
 pinecone_index_name = 'afcfta-business-forum-chatbot'
 pinecone_index = pinecone.Index(pinecone_index_name)
+
+# Supabase setup
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
 
 @app.route("/", methods=("GET", "POST"))
 def index():
@@ -92,8 +99,37 @@ def webhook():
                 phone_number_id = value['metadata']['phone_number_id']
                 from_number = messages[0]['from']  # extract the phone number from the webhook payload
                 msg_body = ""
+
                 if messages[0]['type'] == "text":
                     msg_body = messages[0]['text']['body'] # extract the message text from the webhook payload
+                    
+                    # Check if text is command
+                    if msg_body.startswith("@mode"):
+                        # Get info from database about the chatbot mode
+                        phone_number_mode = supabase.table("chatpawa-modes").select("*").eq("phone_number_id", phone_number_id).execute()
+
+                        if len(phone_number_mode.data) > 0:
+                            print (phone_number_mode.data)
+                            # response = requests.post(
+                            #     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                            #     json={
+                            #         "messaging_product": "whatsapp",
+                            #         "to": from_number,
+                            #         "text": {"body": "" },
+                            #     },
+                            #     headers={"Content-Type": "application/json"},
+                            # )
+                        else:
+                            data = supabase.table("chatpawa-modes").insert({"phone_number_id":phone_number_id, "phone_number_mode": "business_forum_assistant"}).execute()
+                            response = requests.post(
+                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                json={
+                                    "messaging_product": "whatsapp",
+                                    "to": from_number,
+                                    "text": {"body": "Your bot is now on default mode -- Check bot description to know modes" },
+                                },
+                                headers={"Content-Type": "application/json"},
+                            )
                 if messages[0]['type'] == "button":
                     msg_body = messages[0]['button']['text'] # extract the message text from the webhook payload
                 # print(phone_number_id, from_number, msg_body, token)
