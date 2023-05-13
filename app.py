@@ -102,7 +102,7 @@ def webhook():
 
                 if messages[0]['type'] == "text":
                     msg_body = messages[0]['text']['body'] # extract the message text from the webhook payload
-                    
+                    print(msg_body)
                     # Check if text is command
                     if msg_body.startswith("@mode"):
                         # Get info from database about the chatbot mode
@@ -110,15 +110,15 @@ def webhook():
 
                         if len(phone_number_mode.data) > 0:
                             print (phone_number_mode.data)
-                            # response = requests.post(
-                            #     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                            #     json={
-                            #         "messaging_product": "whatsapp",
-                            #         "to": from_number,
-                            #         "text": {"body": "" },
-                            #     },
-                            #     headers={"Content-Type": "application/json"},
-                            # )
+                            response = requests.post(
+                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                json={
+                                    "messaging_product": "whatsapp",
+                                    "to": from_number,
+                                    "text": {"body": "You are in "+phone_number_mode.data[0]['phone_number_mode']+" mode" },
+                                },
+                                headers={"Content-Type": "application/json"},
+                            )
                         else:
                             data = supabase.table("chatpawa-modes").insert({"phone_number_id":phone_number_id, "phone_number_mode": "business_forum_assistant"}).execute()
                             response = requests.post(
