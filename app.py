@@ -169,131 +169,133 @@ def webhook():
                 if messages[0]['type'] == "button":
                     msg_body = messages[0]['button']['text'] # extract the message text from the webhook payload
                 # print(phone_number_id, from_number, msg_body, token)
-                # Classify into question, greeting or other
-                tone_completion = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                                messages= [{
-                                    "role": "user",
-                                    "content": f"Classify the following prompt into question, greeting or other: \"{msg_body}\"."
-                    }]
-                )
-                tone = tone_completion.choices[0].message.content.strip().lower()
-                print("The tone is: "+tone)
-                if tone == "question.":
-                    # search similarities in knowledge base
-                    q_embeddings = get_embedding(msg_body, engine=embedding_model)
-                    res = pinecone_index.query(q_embeddings, top_k=10, include_metadata=True)
-                    relevant_text = [m['metadata']['text']+" " for m in res['matches']]
-
-                    openai_response = openai.Completion.create(
-                        prompt=generate_prompt(relevant_text, msg_body),
-                        temperature=0,
-                        max_tokens=128,
-                        # top_p=1,
-                        # frequency_penalty=0,
-                        # presence_penalty=0,
-                        stop=["###", "\n\n"],
-                        model=gpt_model
-                    )
-                    # there is an answer in knowledge base
-                    if openai_response.choices[0].text.strip() not in ["Please contact the AfCFTA for this particular question.", "Please contact the AfCFTA for this particular question"]:
-                        response = requests.post(
-                            url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                            json={
-                                "messaging_product": "whatsapp",
-                                "to": from_number,
-                                "text": {"body": openai_response.choices[0].text.strip() },
-                            },
-                            headers={"Content-Type": "application/json"},
-                        )
-                    # there is NO answer in the knowledge base
-                    else:
-                       contact = openai.ChatCompletion.create(
-                            model="gpt-3.5-turbo",
-                                        messages= [{
-                                            "role": "user",
-                                            "content": f"Say \"You are an information service agent on the AfCFTA Business Forum. Respond to the user's following question: {msg_body}"
-                            }]
-                        )
-                       response = requests.post(
-                            url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                            json={
-                                "messaging_product": "whatsapp",
-                                "to": from_number,
-                                "text": {"body": contact.choices[0].message.content.strip() },
-                            },
-                            headers={"Content-Type": "application/json"},
-                        )
-                elif tone == "greeting.":
-                    # greet
-                    # answer neutral intent
-                    greet = openai.ChatCompletion.create(
-                                model="gpt-3.5-turbo",
-                                            messages= [{
-                                                "role": "user",
-                                                "content": f"You are an information service agent. Respond to the user's following greeting: {msg_body}"
-                                }]
-                    )
-                    response = requests.post(
-                            url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                            json={
-                                "messaging_product": "whatsapp",
-                                "to": from_number,
-                                "text": {"body": greet.choices[0].message.content.strip() },
-                            },
-                            headers={"Content-Type": "application/json"},
-                    )
-                else:
-                    # answer neutral intent
-                    okay = openai.ChatCompletion.create(
+                # if message is not a command
+                if ~msg_body.startswith("@"):
+                    # Classify into question, greeting or other
+                    tone_completion = openai.ChatCompletion.create(
                         model="gpt-3.5-turbo",
                                     messages= [{
                                         "role": "user",
-                                        "content": f"Say \"ok\" in another way"
+                                        "content": f"Classify the following prompt into question, greeting or other: \"{msg_body}\"."
                         }]
                     )
-                    response = requests.post(
-                            url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                            json={
-                                "messaging_product": "whatsapp",
-                                "to": from_number,
-                                "text": {"body": okay.choices[0].message.content.strip() },
-                            },
-                            headers={"Content-Type": "application/json"},
-                    )
-                ###
-                
-                # else:
-                #     alternative_openai_response = openai.Completion.create(
-                #         prompt=generate_alternative_prompt(msg_body),
-                #         temperature=0,
-                #         max_tokens=128,
-                #         # top_p=1,
-                #         # frequency_penalty=0,
-                #         # presence_penalty=0,
-                #         stop=["###", "\n\n"],
-                #         model=gpt_model
-                #     )
+                    tone = tone_completion.choices[0].message.content.strip().lower()
+                    print("The tone is: "+tone)
+                    if tone == "question.":
+                        # search similarities in knowledge base
+                        q_embeddings = get_embedding(msg_body, engine=embedding_model)
+                        res = pinecone_index.query(q_embeddings, top_k=10, include_metadata=True)
+                        relevant_text = [m['metadata']['text']+" " for m in res['matches']]
 
-                #     response = requests.post(
-                #         url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                #         json={
-                #             "messaging_product": "whatsapp",
-                #             "to": from_number,
-                #             "text": {"body": alternative_openai_response.choices[0].text.strip() },
-                #         },
-                #         headers={"Content-Type": "application/json"},
-                #     )
-                ###
-                # response = requests.post(
-                #     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                #     json={
-                #         "messaging_product": "whatsapp",
-                #         "to": from_number,
-                #         "text": {"body": "Ack: " + msg_body},
-                #     },
-                #     headers={"Content-Type": "application/json"},
-                # )
+                        openai_response = openai.Completion.create(
+                            prompt=generate_prompt(relevant_text, msg_body),
+                            temperature=0,
+                            max_tokens=128,
+                            # top_p=1,
+                            # frequency_penalty=0,
+                            # presence_penalty=0,
+                            stop=["###", "\n\n"],
+                            model=gpt_model
+                        )
+                        # there is an answer in knowledge base
+                        if openai_response.choices[0].text.strip() not in ["Please contact the AfCFTA for this particular question.", "Please contact the AfCFTA for this particular question"]:
+                            response = requests.post(
+                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                json={
+                                    "messaging_product": "whatsapp",
+                                    "to": from_number,
+                                    "text": {"body": openai_response.choices[0].text.strip() },
+                                },
+                                headers={"Content-Type": "application/json"},
+                            )
+                        # there is NO answer in the knowledge base
+                        else:
+                        contact = openai.ChatCompletion.create(
+                                model="gpt-3.5-turbo",
+                                            messages= [{
+                                                "role": "user",
+                                                "content": f"Say \"You are an information service agent on the AfCFTA Business Forum. Respond to the user's following question: {msg_body}"
+                                }]
+                            )
+                        response = requests.post(
+                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                json={
+                                    "messaging_product": "whatsapp",
+                                    "to": from_number,
+                                    "text": {"body": contact.choices[0].message.content.strip() },
+                                },
+                                headers={"Content-Type": "application/json"},
+                            )
+                    elif tone == "greeting.":
+                        # greet
+                        # answer neutral intent
+                        greet = openai.ChatCompletion.create(
+                                    model="gpt-3.5-turbo",
+                                                messages= [{
+                                                    "role": "user",
+                                                    "content": f"You are an information service agent. Respond to the user's following greeting: {msg_body}"
+                                    }]
+                        )
+                        response = requests.post(
+                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                json={
+                                    "messaging_product": "whatsapp",
+                                    "to": from_number,
+                                    "text": {"body": greet.choices[0].message.content.strip() },
+                                },
+                                headers={"Content-Type": "application/json"},
+                        )
+                    else:
+                        # answer neutral intent
+                        okay = openai.ChatCompletion.create(
+                            model="gpt-3.5-turbo",
+                                        messages= [{
+                                            "role": "user",
+                                            "content": f"Say \"ok\" in another way"
+                            }]
+                        )
+                        response = requests.post(
+                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                json={
+                                    "messaging_product": "whatsapp",
+                                    "to": from_number,
+                                    "text": {"body": okay.choices[0].message.content.strip() },
+                                },
+                                headers={"Content-Type": "application/json"},
+                        )
+                    ###
+                    
+                    # else:
+                    #     alternative_openai_response = openai.Completion.create(
+                    #         prompt=generate_alternative_prompt(msg_body),
+                    #         temperature=0,
+                    #         max_tokens=128,
+                    #         # top_p=1,
+                    #         # frequency_penalty=0,
+                    #         # presence_penalty=0,
+                    #         stop=["###", "\n\n"],
+                    #         model=gpt_model
+                    #     )
+
+                    #     response = requests.post(
+                    #         url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                    #         json={
+                    #             "messaging_product": "whatsapp",
+                    #             "to": from_number,
+                    #             "text": {"body": alternative_openai_response.choices[0].text.strip() },
+                    #         },
+                    #         headers={"Content-Type": "application/json"},
+                    #     )
+                    ###
+                    # response = requests.post(
+                    #     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                    #     json={
+                    #         "messaging_product": "whatsapp",
+                    #         "to": from_number,
+                    #         "text": {"body": "Ack: " + msg_body},
+                    #     },
+                    #     headers={"Content-Type": "application/json"},
+                    # )
         return "OK", 200
     if request.method == "GET":
         # Update verify token
