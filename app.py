@@ -210,22 +210,22 @@ def webhook():
                             )
                         # there is NO answer in the knowledge base
                         else:
-                        contact = openai.ChatCompletion.create(
-                                model="gpt-3.5-turbo",
-                                            messages= [{
-                                                "role": "user",
-                                                "content": f"Say \"You are an information service agent on the AfCFTA Business Forum. Respond to the user's following question: {msg_body}"
-                                }]
-                            )
-                        response = requests.post(
-                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                json={
-                                    "messaging_product": "whatsapp",
-                                    "to": from_number,
-                                    "text": {"body": contact.choices[0].message.content.strip() },
-                                },
-                                headers={"Content-Type": "application/json"},
-                            )
+                            contact = openai.ChatCompletion.create(
+                                    model="gpt-3.5-turbo",
+                                                messages= [{
+                                                    "role": "user",
+                                                    "content": f"Say \"You are an information service agent on the AfCFTA Business Forum. Respond to the user's following question: {msg_body}"
+                                    }]
+                                )
+                            response = requests.post(
+                                    url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                    json={
+                                        "messaging_product": "whatsapp",
+                                        "to": from_number,
+                                        "text": {"body": contact.choices[0].message.content.strip() },
+                                    },
+                                    headers={"Content-Type": "application/json"},
+                                )
                     elif tone == "greeting.":
                         # greet
                         # answer neutral intent
