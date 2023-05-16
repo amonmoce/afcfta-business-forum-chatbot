@@ -104,6 +104,41 @@ def webhook():
                     msg_body = messages[0]['text']['body'] # extract the message text from the webhook payload
                     print(msg_body)
                     # Check if text is command
+                    if msg_body.startswith("@help"):
+                        response = requests.post(
+                            url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                            json={
+                                "messaging_product": "whatsapp",
+                                "to": from_number,
+                                "text": {"body": "The chatbot's default mode is set as an information service for the AfCFTA Business Forum. Send @register to be informed of additional features and/or offers." },
+                            },
+                            headers={"Content-Type": "application/json"},
+                        )
+                    if msg_body.startswith("@register"):
+                        # Get info from database about the chatbot mode
+                        phone_number_mode = supabase.table("chatpawa-modes").select("*").eq("phone_number_id", phone_number_id).execute()
+
+                        if len(phone_number_mode.data) > 0:
+                            response = requests.post(
+                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                json={
+                                    "messaging_product": "whatsapp",
+                                    "to": from_number,
+                                    "text": {"body": "You are already registered." },
+                                },
+                                headers={"Content-Type": "application/json"},
+                            )
+                        else:
+                            data = supabase.table("chatpawa-modes").insert({"phone_number_id":phone_number_id, "phone_number_mode": "business_forum_assistant"}).execute()
+                            response = requests.post(
+                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                json={
+                                    "messaging_product": "whatsapp",
+                                    "to": from_number,
+                                    "text": {"body": "Great! You are registered and we will keep you updated." },
+                                },
+                                headers={"Content-Type": "application/json"},
+                            ) 
                     if msg_body.startswith("@mode"):
                         # Get info from database about the chatbot mode
                         phone_number_mode = supabase.table("chatpawa-modes").select("*").eq("phone_number_id", phone_number_id).execute()
@@ -130,6 +165,7 @@ def webhook():
                                 },
                                 headers={"Content-Type": "application/json"},
                             )
+                
                 if messages[0]['type'] == "button":
                     msg_body = messages[0]['button']['text'] # extract the message text from the webhook payload
                 # print(phone_number_id, from_number, msg_body, token)
