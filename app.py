@@ -170,7 +170,7 @@ def webhook():
                     msg_body = messages[0]['button']['text'] # extract the message text from the webhook payload
                 # print(phone_number_id, from_number, msg_body, token)
                 # if message is not a command
-                if ~msg_body.startswith("@"):
+                if not msg_body.startswith("@"):
                     # Classify into question, greeting or other
                     tone_completion = openai.ChatCompletion.create(
                         model="gpt-3.5-turbo",
