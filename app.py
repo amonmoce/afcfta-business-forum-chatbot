@@ -99,203 +99,243 @@ def webhook():
                 phone_number_id = value['metadata']['phone_number_id']
                 from_number = messages[0]['from']  # extract the phone number from the webhook payload
                 msg_body = ""
-
+                
+                if messages[0]['type'] == "audio":
+                    pass
+                if messages[0]['type'] == "document":
+                    pass
+                if messages[0]['type'] == "image":
+                    pass
+                if messages[0]['type'] == "sticker":
+                    pass
+                if messages[0]['type'] == "system":
+                    pass
+                if messages[0]['type'] == "video":
+                    pass
+                if messages[0]['type'] == "interactive":
+                    pass
+                if messages[0]['type'] == "order":
+                    pass
+                if messages[0]['type'] == "unknown":
+                    pass
                 if messages[0]['type'] == "text":
                     msg_body = messages[0]['text']['body'] # extract the message text from the webhook payload
+                    # Get info from database about the chatbot mode
+                    chatpawa_modes = supabase.table("chatpawa-modes").select("*").eq("phone_number_id", phone_number_id).execute()
+                    phone_number_mode = chatpawa_modes.data[0]['phone_number_mode']
+                    phone_number_lang = chatpawa_modes.data[0]['phone_number_lang']
+                    if phone_number_lang != "":
+                        phone_number_lang = "fr"
+
                     print(msg_body)
-                    # Check if text is command
-                    if msg_body.startswith("@help"):
-                        response = requests.post(
-                            url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                            json={
-                                "messaging_product": "whatsapp",
-                                "to": from_number,
-                                "text": {"body": "The chatbot's default mode is set as an information service for the AfCFTA Business Forum. Send @register to be informed of additional features and/or offers." },
-                            },
-                            headers={"Content-Type": "application/json"},
-                        )
-                    if msg_body.startswith("@register"):
-                        # Get info from database about the chatbot mode
-                        phone_number_mode = supabase.table("chatpawa-modes").select("*").eq("phone_number_id", phone_number_id).execute()
+                    # if message is not a command, is conversation
+                    if not msg_body.startswith("@"):
+                        
+                        ## BNVAA
+                        if phone_number_mode == "bnvaa":
+                            modes_setting = supabase.table("modes-settings").select("*").eq("mode_id", phone_number_mode).execute()
+                            system_message = modes_setting.data[0]['mode_system_message']
+                            message_array = [
+                                {
+                                    "role": "system",
+                                    "content": system_message
+                                },
+                                {
+                                    "role": "user",
+                                    "content": f"Reponds au message suivant du citoyen; message: \"{msg_body}\"."
+                                }
+                            ]
+                            response = chatgpt_completion(message_array)
+                            respond_webhook(phone_number_id, token, from_number, response)
+                        ## Business Forums
+                        if phone_number_mode == "business_forum_assistant":
+                            # Classify into question, greeting or other
+                            tone_completion = openai.ChatCompletion.create(
+                                model="gpt-3.5-turbo",
+                                            messages= [{
+                                                "role": "user",
+                                                "content": f"Classify the following prompt into question, greeting or other: \"{msg_body}\"."
+                                }]
+                            )
+                            tone = tone_completion.choices[0].message.content.strip().lower()
+                            
+                            if tone == "question.":
+                                # search similarities in knowledge base
+                                q_embeddings = get_embedding(msg_body, engine=embedding_model)
+                                res = pinecone_index.query(q_embeddings, top_k=10, include_metadata=True)
+                                relevant_text = [m['metadata']['text']+" " for m in res['matches']]
 
-                        if len(phone_number_mode.data) > 0:
-                            response = requests.post(
-                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                json={
-                                    "messaging_product": "whatsapp",
-                                    "to": from_number,
-                                    "text": {"body": "You are already registered." },
-                                },
-                                headers={"Content-Type": "application/json"},
-                            )
-                        else:
-                            data = supabase.table("chatpawa-modes").insert({"phone_number_id":phone_number_id, "phone_number_mode": "business_forum_assistant"}).execute()
-                            response = requests.post(
-                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                json={
-                                    "messaging_product": "whatsapp",
-                                    "to": from_number,
-                                    "text": {"body": "Great! You are registered and we will keep you updated." },
-                                },
-                                headers={"Content-Type": "application/json"},
-                            ) 
-                    if msg_body.startswith("@mode"):
-                        # Get info from database about the chatbot mode
-                        phone_number_mode = supabase.table("chatpawa-modes").select("*").eq("phone_number_id", phone_number_id).execute()
-
-                        if len(phone_number_mode.data) > 0:
-                            print (phone_number_mode.data)
-                            response = requests.post(
-                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                json={
-                                    "messaging_product": "whatsapp",
-                                    "to": from_number,
-                                    "text": {"body": "You are in "+phone_number_mode.data[0]['phone_number_mode']+" mode" },
-                                },
-                                headers={"Content-Type": "application/json"},
-                            )
-                        else:
-                            data = supabase.table("chatpawa-modes").insert({"phone_number_id":phone_number_id, "phone_number_mode": "business_forum_assistant"}).execute()
-                            response = requests.post(
-                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                json={
-                                    "messaging_product": "whatsapp",
-                                    "to": from_number,
-                                    "text": {"body": "Your bot is now on default mode -- Check bot description to know modes" },
-                                },
-                                headers={"Content-Type": "application/json"},
-                            )
-                
-                if messages[0]['type'] == "button":
-                    msg_body = messages[0]['button']['text'] # extract the message text from the webhook payload
-                # print(phone_number_id, from_number, msg_body, token)
-                # if message is not a command
-                if not msg_body.startswith("@"):
-                    # Classify into question, greeting or other
-                    tone_completion = openai.ChatCompletion.create(
-                        model="gpt-3.5-turbo",
-                                    messages= [{
-                                        "role": "user",
-                                        "content": f"Classify the following prompt into question, greeting or other: \"{msg_body}\"."
-                        }]
-                    )
-                    tone = tone_completion.choices[0].message.content.strip().lower()
-                    print("The tone is: "+tone)
-                    if tone == "question.":
-                        # search similarities in knowledge base
-                        q_embeddings = get_embedding(msg_body, engine=embedding_model)
-                        res = pinecone_index.query(q_embeddings, top_k=10, include_metadata=True)
-                        relevant_text = [m['metadata']['text']+" " for m in res['matches']]
-
-                        openai_response = openai.Completion.create(
-                            prompt=generate_prompt(relevant_text, msg_body),
-                            temperature=0,
-                            max_tokens=128,
-                            # top_p=1,
-                            # frequency_penalty=0,
-                            # presence_penalty=0,
-                            stop=["###", "\n\n"],
-                            model=gpt_model
-                        )
-                        # there is an answer in knowledge base
-                        if openai_response.choices[0].text.strip() not in ["Please contact the AfCFTA for this particular question.", "Please contact the AfCFTA for this particular question"]:
-                            response = requests.post(
-                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                json={
-                                    "messaging_product": "whatsapp",
-                                    "to": from_number,
-                                    "text": {"body": openai_response.choices[0].text.strip() },
-                                },
-                                headers={"Content-Type": "application/json"},
-                            )
-                        # there is NO answer in the knowledge base
-                        else:
-                            contact = openai.ChatCompletion.create(
+                                openai_response = openai.Completion.create(
+                                    prompt=generate_prompt(relevant_text, msg_body),
+                                    temperature=0,
+                                    max_tokens=128,
+                                    # top_p=1,
+                                    # frequency_penalty=0,
+                                    # presence_penalty=0,
+                                    stop=["###", "\n\n"],
+                                    model=gpt_model
+                                )
+                                # there is an answer in knowledge base
+                                if openai_response.choices[0].text.strip() not in ["Please contact the AfCFTA for this particular question.", "Please contact the AfCFTA for this particular question"]:
+                                    response = requests.post(
+                                        url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                        json={
+                                            "messaging_product": "whatsapp",
+                                            "to": from_number,
+                                            "text": {"body": openai_response.choices[0].text.strip() },
+                                        },
+                                        headers={"Content-Type": "application/json"},
+                                    )
+                                # there is NO answer in the knowledge base
+                                else:
+                                    contact = openai.ChatCompletion.create(
+                                            model="gpt-3.5-turbo",
+                                                        messages= [{
+                                                            "role": "user",
+                                                            "content": f"Say \"You are an information service agent on the AfCFTA Business Forum. Respond to the user's following question: {msg_body}"
+                                            }]
+                                        )
+                                    response = requests.post(
+                                            url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                            json={
+                                                "messaging_product": "whatsapp",
+                                                "to": from_number,
+                                                "text": {"body": contact.choices[0].message.content.strip() },
+                                            },
+                                            headers={"Content-Type": "application/json"},
+                                        )
+                            elif tone == "greeting.":
+                                # greet
+                                # answer neutral intent
+                                greet = openai.ChatCompletion.create(
+                                            model="gpt-3.5-turbo",
+                                                        messages= [{
+                                                            "role": "user",
+                                                            "content": f"You are an information service agent. Respond to the user's following greeting: {msg_body}"
+                                            }]
+                                )
+                                response = requests.post(
+                                        url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                        json={
+                                            "messaging_product": "whatsapp",
+                                            "to": from_number,
+                                            "text": {"body": greet.choices[0].message.content.strip() },
+                                        },
+                                        headers={"Content-Type": "application/json"},
+                                )
+                            else:
+                                # answer neutral intent
+                                okay = openai.ChatCompletion.create(
                                     model="gpt-3.5-turbo",
                                                 messages= [{
                                                     "role": "user",
-                                                    "content": f"Say \"You are an information service agent on the AfCFTA Business Forum. Respond to the user's following question: {msg_body}"
+                                                    "content": f"Say \"ok\" in another way"
                                     }]
                                 )
+                                response = requests.post(
+                                        url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                        json={
+                                            "messaging_product": "whatsapp",
+                                            "to": from_number,
+                                            "text": {"body": okay.choices[0].message.content.strip() },
+                                        },
+                                        headers={"Content-Type": "application/json"},
+                                )
+                            ###
+                            
+                            # else:
+                            #     alternative_openai_response = openai.Completion.create(
+                            #         prompt=generate_alternative_prompt(msg_body),
+                            #         temperature=0,
+                            #         max_tokens=128,
+                            #         # top_p=1,
+                            #         # frequency_penalty=0,
+                            #         # presence_penalty=0,
+                            #         stop=["###", "\n\n"],
+                            #         model=gpt_model
+                            #     )
+
+                            #     response = requests.post(
+                            #         url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                            #         json={
+                            #             "messaging_product": "whatsapp",
+                            #             "to": from_number,
+                            #             "text": {"body": alternative_openai_response.choices[0].text.strip() },
+                            #         },
+                            #         headers={"Content-Type": "application/json"},
+                            #     )
+                            ###
+                            # response = requests.post(
+                            #     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                            #     json={
+                            #         "messaging_product": "whatsapp",
+                            #         "to": from_number,
+                            #         "text": {"body": "Ack: " + msg_body},
+                            #     },
+                            #     headers={"Content-Type": "application/json"},
+                            # )
+                    # if message is command
+                    else:
+                        if msg_body.startswith("@help"):
                             response = requests.post(
+                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                json={
+                                    "messaging_product": "whatsapp",
+                                    "to": from_number,
+                                    "text": {"body": "The chatbot's default mode is set as an information service for the AfCFTA Business Forum. Send @register to be informed of additional features and/or offers." },
+                                },
+                                headers={"Content-Type": "application/json"},
+                            )
+                        if msg_body.startswith("@register"):
+                            if len(phone_number_mode.data) > 0:
+                                response = requests.post(
                                     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
                                     json={
                                         "messaging_product": "whatsapp",
                                         "to": from_number,
-                                        "text": {"body": contact.choices[0].message.content.strip() },
+                                        "text": {"body": "You are already registered." },
                                     },
                                     headers={"Content-Type": "application/json"},
                                 )
-                    elif tone == "greeting.":
-                        # greet
-                        # answer neutral intent
-                        greet = openai.ChatCompletion.create(
-                                    model="gpt-3.5-turbo",
-                                                messages= [{
-                                                    "role": "user",
-                                                    "content": f"You are an information service agent. Respond to the user's following greeting: {msg_body}"
-                                    }]
-                        )
-                        response = requests.post(
-                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                json={
-                                    "messaging_product": "whatsapp",
-                                    "to": from_number,
-                                    "text": {"body": greet.choices[0].message.content.strip() },
-                                },
-                                headers={"Content-Type": "application/json"},
-                        )
-                    else:
-                        # answer neutral intent
-                        okay = openai.ChatCompletion.create(
-                            model="gpt-3.5-turbo",
-                                        messages= [{
-                                            "role": "user",
-                                            "content": f"Say \"ok\" in another way"
-                            }]
-                        )
-                        response = requests.post(
-                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                json={
-                                    "messaging_product": "whatsapp",
-                                    "to": from_number,
-                                    "text": {"body": okay.choices[0].message.content.strip() },
-                                },
-                                headers={"Content-Type": "application/json"},
-                        )
-                    ###
+                            else:
+                                data = supabase.table("chatpawa-modes").insert({"phone_number_id":phone_number_id, "phone_number_mode": "business_forum_assistant"}).execute()
+                                response = requests.post(
+                                    url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                    json={
+                                        "messaging_product": "whatsapp",
+                                        "to": from_number,
+                                        "text": {"body": "Great! You are registered and we will keep you updated." },
+                                    },
+                                    headers={"Content-Type": "application/json"},
+                                ) 
+                        if msg_body.startswith("@mode"):
+                            if len(phone_number_mode.data) > 0:
+                                print (phone_number_mode.data)
+                                response = requests.post(
+                                    url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                    json={
+                                        "messaging_product": "whatsapp",
+                                        "to": from_number,
+                                        "text": {"body": "You are in "+phone_number_mode.data[0]['phone_number_mode']+" mode" },
+                                    },
+                                    headers={"Content-Type": "application/json"},
+                                )
+                            else:
+                                data = supabase.table("chatpawa-modes").insert({"phone_number_id":phone_number_id, "phone_number_mode": "business_forum_assistant"}).execute()
+                                response = requests.post(
+                                    url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                    json={
+                                        "messaging_product": "whatsapp",
+                                        "to": from_number,
+                                        "text": {"body": "Your bot is now on default mode -- Check bot description to know modes" },
+                                    },
+                                    headers={"Content-Type": "application/json"},
+                                )
                     
-                    # else:
-                    #     alternative_openai_response = openai.Completion.create(
-                    #         prompt=generate_alternative_prompt(msg_body),
-                    #         temperature=0,
-                    #         max_tokens=128,
-                    #         # top_p=1,
-                    #         # frequency_penalty=0,
-                    #         # presence_penalty=0,
-                    #         stop=["###", "\n\n"],
-                    #         model=gpt_model
-                    #     )
+                if messages[0]['type'] == "button":
+                    msg_body = messages[0]['button']['text'] # extract the message text from the webhook payload
+                # print(phone_number_id, from_number, msg_body, token)
 
-                    #     response = requests.post(
-                    #         url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                    #         json={
-                    #             "messaging_product": "whatsapp",
-                    #             "to": from_number,
-                    #             "text": {"body": alternative_openai_response.choices[0].text.strip() },
-                    #         },
-                    #         headers={"Content-Type": "application/json"},
-                    #     )
-                    ###
-                    # response = requests.post(
-                    #     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                    #     json={
-                    #         "messaging_product": "whatsapp",
-                    #         "to": from_number,
-                    #         "text": {"body": "Ack: " + msg_body},
-                    #     },
-                    #     headers={"Content-Type": "application/json"},
-                    # )
         return "OK", 200
     if request.method == "GET":
         # Update verify token
@@ -321,3 +361,21 @@ def generate_prompt(relevant_text, question):
 
 def generate_alternative_prompt(question):
     return f"Imagine a conversation between a customer service agent in charge of answering questions on the AfCFTA Business Forum, and a person interested in the forum\"\n\Interested: {question}\n\n---\n\nAgent:"
+
+def chatgpt_completion(message_array):
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages= message_array
+    )
+    return completion.choices[0].message.content
+
+def respond_webhook(id, tk, destination_number, response):
+    response = requests.post(
+        url="https://graph.facebook.com/v12.0/" + id + "/messages?access_token=" + tk,
+        json={
+            "messaging_product": "whatsapp",
+            "to": destination_number,
+            "text": {"body": response },
+        },
+        headers={"Content-Type": "application/json"},
+    )
