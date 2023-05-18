@@ -126,7 +126,8 @@ def webhook():
                     phone_number_lang = chatpawa_modes.data[0]['phone_number_lang']
                     if phone_number_lang != "":
                         phone_number_lang = "fr"
-
+                    if phone_number_mode != "":
+                        phone_number_mode = "bnvaa"
                     print(msg_body)
                     # if message is not a command, is conversation
                     if not msg_body.startswith("@"):
@@ -309,14 +310,13 @@ def webhook():
                                     headers={"Content-Type": "application/json"},
                                 ) 
                         if msg_body.startswith("@mode"):
-                            if len(phone_number_mode.data) > 0:
-                                print (phone_number_mode.data)
+                            if phone_number_mode != "":
                                 response = requests.post(
                                     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
                                     json={
                                         "messaging_product": "whatsapp",
                                         "to": from_number,
-                                        "text": {"body": "You are in "+phone_number_mode.data[0]['phone_number_mode']+" mode" },
+                                        "text": {"body": "You are in "+phone_number_mode+" mode" },
                                     },
                                     headers={"Content-Type": "application/json"},
                                 )
