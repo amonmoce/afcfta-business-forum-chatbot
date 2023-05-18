@@ -114,7 +114,7 @@ def webhook():
                     # Get info from database about the chatbot mode
                     chatpawa_users = supabase.table("chatpawa-users").select("*").eq("phone_number", from_number).execute()
                     phone_number_mode = chatpawa_users.data[0]['phone_number_mode']
-                    phone_number_lang = chatpawa_users.data[0]['phone_number_lang']
+                    # phone_number_lang = chatpawa_users.data[0]['phone_number_lang']
                     if phone_number_lang != "":
                         phone_number_lang = "fr"
                     if phone_number_mode == "":
