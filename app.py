@@ -2,9 +2,7 @@ import os
 import pandas as pd
 import json
 import requests
-
-import openai
-from openai.embeddings_utils import get_embedding, distances_from_embeddings, cosine_similarity
+from openai_helpers import *
 import pinecone
 
 from supabase import create_client, Client
@@ -14,12 +12,6 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
-
-# Openai setup
-openai.api_key = os.getenv("OPENAI_API_KEY")
-embedding_model = "text-embedding-ada-002"
-gpt_model = "text-davinci-003"
-chatgpt_model = "gpt-3.5-turbo"
 
 # Pinecone setup
 PINECONE_KEY = os.getenv("PINECONE_KEY")
@@ -91,7 +83,6 @@ def webhook():
         # Check the Incoming webhook message
         print(json.dumps(body, indent=2))
         
-
         # info on WhatsApp text message payload: https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/payload-examples#text-messages
         if body:
             entry = body['entry'][0]
@@ -121,9 +112,9 @@ def webhook():
                 if messages[0]['type'] == "text":
                     msg_body = messages[0]['text']['body'] # extract the message text from the webhook payload
                     # Get info from database about the chatbot mode
-                    chatpawa_modes = supabase.table("chatpawa-modes").select("*").eq("phone_number_id", phone_number_id).execute()
-                    phone_number_mode = chatpawa_modes.data[0]['phone_number_mode']
-                    phone_number_lang = chatpawa_modes.data[0]['phone_number_lang']
+                    chatpawa_users = supabase.table("chatpawa-users").select("*").eq("phone_number", from_number).execute()
+                    phone_number_mode = chatpawa_users.data[0]['phone_number_mode']
+                    phone_number_lang = chatpawa_users.data[0]['phone_number_lang']
                     if phone_number_lang != "":
                         phone_number_lang = "fr"
                     if phone_number_mode == "":
@@ -291,49 +282,61 @@ def webhook():
                                 headers={"Content-Type": "application/json"},
                             )
                         if msg_body.startswith("@register"):
-                            if len(phone_number_mode.data) > 0:
-                                response = requests.post(
-                                    url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                    json={
-                                        "messaging_product": "whatsapp",
-                                        "to": from_number,
-                                        "text": {"body": "You are already registered." },
-                                    },
-                                    headers={"Content-Type": "application/json"},
-                                )
+                            if phone_number_mode != "":
+                                response_body = "You are already registered."
+                                respond_webhook(phone_number_id, token, from_number, response_body)
+
+                                # response = requests.post(
+                                #     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                #     json={
+                                #         "messaging_product": "whatsapp",
+                                #         "to": from_number,
+                                #         "text": {"body": "You are already registered." },
+                                #     },
+                                #     headers={"Content-Type": "application/json"},
+                                # )
                             else:
-                                data = supabase.table("chatpawa-modes").insert({"phone_number_id":phone_number_id, "phone_number_mode": "business_forum_assistant"}).execute()
-                                response = requests.post(
-                                    url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                    json={
-                                        "messaging_product": "whatsapp",
-                                        "to": from_number,
-                                        "text": {"body": "Great! You are registered and we will keep you updated." },
-                                    },
-                                    headers={"Content-Type": "application/json"},
-                                ) 
+                                data = supabase.table("chatpawa-users").insert({"phone_number":from_number, "phone_number_mode": "business_forum_assistant"}).execute()
+                                response_body = "Great! You are registered and we will keep you updated."
+                                respond_webhook(phone_number_id, token, from_number, response_body)
+
+                                # response = requests.post(
+                                #     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                #     json={
+                                #         "messaging_product": "whatsapp",
+                                #         "to": from_number,
+                                #         "text": {"body": "Great! You are registered and we will keep you updated." },
+                                #     },
+                                #     headers={"Content-Type": "application/json"},
+                                # ) 
                         if msg_body.startswith("@mode"):
                             if phone_number_mode != "":
-                                response = requests.post(
-                                    url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                    json={
-                                        "messaging_product": "whatsapp",
-                                        "to": from_number,
-                                        "text": {"body": "You are in "+phone_number_mode+" mode" },
-                                    },
-                                    headers={"Content-Type": "application/json"},
-                                )
+                                response_body = "You are in "+phone_number_mode+" mode"
+                                respond_webhook(phone_number_id, token, from_number, response_body)
+
+                                # response = requests.post(
+                                #     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                #     json={
+                                #         "messaging_product": "whatsapp",
+                                #         "to": from_number,
+                                #         "text": {"body": "You are in "+phone_number_mode+" mode" },
+                                #     },
+                                #     headers={"Content-Type": "application/json"},
+                                # )
                             else:
-                                data = supabase.table("chatpawa-modes").insert({"phone_number_id":phone_number_id, "phone_number_mode": "business_forum_assistant"}).execute()
-                                response = requests.post(
-                                    url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                    json={
-                                        "messaging_product": "whatsapp",
-                                        "to": from_number,
-                                        "text": {"body": "Your bot is now on default mode -- Check bot description to know modes" },
-                                    },
-                                    headers={"Content-Type": "application/json"},
-                                )
+                                data = supabase.table("chatpawa-users").insert({"phone_number":from_number, "phone_number_mode": "business_forum_assistant"}).execute()
+                                response_body = "Your bot is now on default mode -- Check bot description to know modes"
+                                respond_webhook(phone_number_id, token, from_number, response_body)
+
+                                # response = requests.post(
+                                #     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+                                #     json={
+                                #         "messaging_product": "whatsapp",
+                                #         "to": from_number,
+                                #         "text": {"body": "Your bot is now on default mode -- Check bot description to know modes" },
+                                #     },
+                                #     headers={"Content-Type": "application/json"},
+                                # )
                     
                 if messages[0]['type'] == "button":
                     msg_body = messages[0]['button']['text'] # extract the message text from the webhook payload
@@ -358,27 +361,3 @@ def webhook():
             else:
                 # Responds with '403 Forbidden' if verify tokens do not match
                 return "Forbidden", 403
-
-def generate_prompt(relevant_text, question):
-    return f"Answer the question based on the context below, and if the question can't be answered based on the context, say \"Please contact the AfCFTA for this particular question\"\n\nContext: {relevant_text}\n\n---\n\nQuestion: {question}\nAnswer:"
-
-def generate_alternative_prompt(question):
-    return f"Imagine a conversation between a customer service agent in charge of answering questions on the AfCFTA Business Forum, and a person interested in the forum\"\n\Interested: {question}\n\n---\n\nAgent:"
-
-def chatgpt_completion(message_array):
-    completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages= message_array
-    )
-    return completion.choices[0].message.content
-
-def respond_webhook(id, tk, destination_number, response):
-    response = requests.post(
-        url="https://graph.facebook.com/v12.0/" + id + "/messages?access_token=" + tk,
-        json={
-            "messaging_product": "whatsapp",
-            "to": destination_number,
-            "text": {"body": response },
-        },
-        headers={"Content-Type": "application/json"},
-    )
