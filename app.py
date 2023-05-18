@@ -126,7 +126,7 @@ def webhook():
                     phone_number_lang = chatpawa_modes.data[0]['phone_number_lang']
                     if phone_number_lang != "":
                         phone_number_lang = "fr"
-                    if phone_number_mode != "":
+                    if phone_number_mode == "":
                         phone_number_mode = "bnvaa"
                     print(msg_body)
                     # if message is not a command, is conversation
