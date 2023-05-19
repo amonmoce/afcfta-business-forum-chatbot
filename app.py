@@ -119,14 +119,31 @@ def webhook():
                         default_phone_number_mode = supabase.table("modes-settings").select("*").eq("status", "default").execute()
                         phone_number_mode = default_phone_number_mode.data[0]['mode_id']
                         data = supabase.table("chatpawa-users").insert({"phone_number":from_number, "phone_number_mode": phone_number_mode}).execute()
+                    modes_setting = supabase.table("modes-settings").select("*").eq("mode_id", phone_number_mode).execute()
+                    system_message = modes_setting.data[0]['mode_system_message']
                     print(msg_body)
                     # if message is not a command, is conversation
                     if not msg_body.startswith("@"):
                         
+                        ## Africallia
+                        if phone_number_mode == "africallia":
+                            message_array = [
+                                {
+                                    "role": "system",
+                                    "content": system_message
+                                },
+                                {
+                                    "role": "user",
+                                    "content": f"Reponds au message suivant de l'homme d'affaires; message: \"{msg_body}\"."
+                                }
+                            ]
+                            response = chatgpt_completion(message_array)
+                            respond_webhook(phone_number_id, token, from_number, response)
+                            # saving messages
+                            data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
+
                         ## BNVAA
                         if phone_number_mode == "bnvaa":
-                            modes_setting = supabase.table("modes-settings").select("*").eq("mode_id", phone_number_mode).execute()
-                            system_message = modes_setting.data[0]['mode_system_message']
                             message_array = [
                                 {
                                     "role": "system",
