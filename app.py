@@ -115,10 +115,10 @@ def webhook():
                     chatpawa_users = supabase.table("chatpawa-users").select("*").eq("phone_number", from_number).execute()
                     phone_number_mode = chatpawa_users.data[0]['phone_number_mode']
                     # phone_number_lang = chatpawa_users.data[0]['phone_number_lang']
-                    # if phone_number_lang != "":
-                    #     phone_number_lang = "fr"
                     if phone_number_mode == "":
-                        phone_number_mode = "bnvaa"
+                        default_phone_number_mode = supabase.table("modes-settings").select("*").eq("status", "default").execute()
+                        phone_number_mode = default_phone_number_mode.data[0]['mode_id']
+                        data = supabase.table("chatpawa-users").insert({"phone_number":from_number, "phone_number_mode": phone_number_mode}).execute()
                     print(msg_body)
                     # if message is not a command, is conversation
                     if not msg_body.startswith("@"):
@@ -272,15 +272,9 @@ def webhook():
                     # if message is command
                     else:
                         if msg_body.startswith("@help"):
-                            response = requests.post(
-                                url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                json={
-                                    "messaging_product": "whatsapp",
-                                    "to": from_number,
-                                    "text": {"body": "The chatbot's default mode is set as an information service for the AfCFTA Business Forum. Send @register to be informed of additional features and/or offers." },
-                                },
-                                headers={"Content-Type": "application/json"},
-                            )
+                            response_body = "Here are chatpawa's commands:\n @mode: Know your current mode or change the mode by adding the mode name like @mode africallia\n@list_modes(soon): Know the available modes\n@privacy(soon): Know the privacy policy for the mode you are at\n@agree(soon): Agree to the privacy policy\n@disagree(soon): Disagree to the privacy policy. You won't be able to use chatpawa"
+                            respond_webhook(phone_number_id, token, from_number, response_body)
+                        # replace @register with @privacy (per mode), @agree, @disagree
                         if msg_body.startswith("@register"):
                             if phone_number_mode != "":
                                 response_body = "You are already registered."
@@ -310,37 +304,24 @@ def webhook():
                                 #     headers={"Content-Type": "application/json"},
                                 # ) 
                         if msg_body.startswith("@mode"):
-                            if phone_number_mode != "":
-                                response_body = "You are in "+phone_number_mode+" mode"
+                            words = msg_body.split()
+                            if len(words) == 1:
+                                # Send the current mode
+                                mode_settings = supabase.table("modes-settings").select("*").eq("mode_id", phone_number_mode).execute()
+                                response_body = "You are in "+phone_number_mode+" mode: "+mode_settings.data[0]['description']
                                 respond_webhook(phone_number_id, token, from_number, response_body)
-
-                                # response = requests.post(
-                                #     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                #     json={
-                                #         "messaging_product": "whatsapp",
-                                #         "to": from_number,
-                                #         "text": {"body": "You are in "+phone_number_mode+" mode" },
-                                #     },
-                                #     headers={"Content-Type": "application/json"},
-                                # )
-                            else:
-                                data = supabase.table("chatpawa-users").insert({"phone_number":from_number, "phone_number_mode": "business_forum_assistant"}).execute()
-                                response_body = "Your bot is now on default mode -- Check bot description to know modes"
-                                respond_webhook(phone_number_id, token, from_number, response_body)
-
-                                # response = requests.post(
-                                #     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
-                                #     json={
-                                #         "messaging_product": "whatsapp",
-                                #         "to": from_number,
-                                #         "text": {"body": "Your bot is now on default mode -- Check bot description to know modes" },
-                                #     },
-                                #     headers={"Content-Type": "application/json"},
-                                # )
-                    
+                            if len(words) == 2:
+                                # Update current mode to the one specified
+                                verify_phone_number_mode = supabase.table("modes-settings").select("*").eq("mode_id", words[1]).execute()
+                                if len(verify_phone_number_mode.data) > 0:
+                                    data = supabase.table("chatpawa-users").update({"phone_number_mode": words[1]}).eq("phone_number", from_number).execute()
+                                    response_body = "Your bot mode is now "+ phone_number_mode+" -- Check bot description to know @mode"
+                                    respond_webhook(phone_number_id, token, from_number, response_body)
+                                else:
+                                    response_body = "This mode does not exist. Send @list_mode to know all the modes"
+                                    respond_webhook(phone_number_id, token, from_number, response_body)
                 if messages[0]['type'] == "button":
                     msg_body = messages[0]['button']['text'] # extract the message text from the webhook payload
-                # print(phone_number_id, from_number, msg_body, token)
 
         return "OK", 200
     if request.method == "GET":
