@@ -115,7 +115,7 @@ def webhook():
                     chatpawa_users = supabase.table("chatpawa-users").select("*").eq("phone_number", from_number).execute()
                     # phone_number_lang = chatpawa_users.data[0]['phone_number_lang']
                     phone_number_mode = ""
-                    if len(chatpawa_users.data) == 0:
+                    if len(chatpawa_users.data) == 0: # for new users
                         default_phone_number_mode = supabase.table("modes-settings").select("*").eq("status", "default").execute()
                         phone_number_mode = default_phone_number_mode.data[0]['mode_id']
                         data = supabase.table("chatpawa-users").insert({"phone_number":from_number, "phone_number_mode": phone_number_mode}).execute()
@@ -159,7 +159,7 @@ def webhook():
                             response = chatgpt_completion(message_array)
                             respond_webhook(phone_number_id, token, from_number, response)
                             # saving messages
-                            data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number_id": phone_number_id, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
+                            data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
 
                         ## Business Forums
                         if phone_number_mode == "business_forum_assistant":
