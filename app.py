@@ -147,9 +147,10 @@ def webhook():
                                 }
                             ]
                             response = chatgpt_completion(message_array)
-                            respond_webhook(phone_number_id, token, from_number, response)
-                            # saving messages
-                            data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
+                            if response != "error":
+                                respond_webhook(phone_number_id, token, from_number, response)
+                                # saving messages
+                                data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
 
                         ## BNVAA
                         if phone_number_mode == "bnvaa":
@@ -163,10 +164,12 @@ def webhook():
                                     "content": f"Reponds au message suivant du citoyen; message: \"{msg_body}\"."
                                 }
                             ]
+                            
                             response = chatgpt_completion(message_array)
-                            respond_webhook(phone_number_id, token, from_number, response)
-                            # saving messages
-                            data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
+                            if response != "error":
+                                respond_webhook(phone_number_id, token, from_number, response)
+                                # saving messages
+                                data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
 
                         ## Business Forums
                         if phone_number_mode == "business_forum_assistant":

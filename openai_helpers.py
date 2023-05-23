@@ -23,7 +23,12 @@ def chatgpt_completion(message_array):
         model="gpt-3.5-turbo",
         messages= message_array
     )
-    return completion.choices[0].message.content
+    if completion.choices[0].message.content:
+        return completion.choices[0].message.content
+    else:
+        print ("CHATPAWA PRINTS OPENAI ERROR")
+        print (completion)
+        return "error"
 
 def respond_webhook(id, tk, destination_number, response):
 
