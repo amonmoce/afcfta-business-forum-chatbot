@@ -93,9 +93,16 @@ def webhook():
                 
                 if messages[0]['type'] == "audio":
                     pass
+                if messages[0]['type'] == "location":
+                    pass
                 if messages[0]['type'] == "document":
                     pass
                 if messages[0]['type'] == "image":
+                #     "image": {
+                #     "mime_type": "image/jpeg",
+                #     "sha256": "QW+LqZdVo+mYd73LTXYaCvVZ2N+woGMClbTRAoYihbA=",
+                #     "id": "816050752774702"
+                #   }
                     pass
                 if messages[0]['type'] == "sticker":
                     pass
@@ -318,7 +325,7 @@ def webhook():
                                 verify_phone_number_mode = supabase.table("modes-settings").select("*").eq("mode_id", words[1]).execute()
                                 if len(verify_phone_number_mode.data) > 0:
                                     data = supabase.table("chatpawa-users").update({"phone_number_mode": words[1]}).eq("phone_number", from_number).execute()
-                                    response_body = "Your bot mode is now "+ words[1]+" -- Send @mode to check the bot's mode description"
+                                    response_body = "Le mode "+ words[1]+" est activé -- "+verify_phone_number_mode.data[0]['description']+" -- Vous pouvez poser vos questions."
                                     respond_webhook(phone_number_id, token, from_number, response_body)
                                 else:
                                     response_body = "This mode does not exist. Send @list_mode to know all the modes"
