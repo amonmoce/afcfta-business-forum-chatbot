@@ -360,7 +360,7 @@ def webhook():
                                 verify_phone_number_mode = supabase.table("modes-settings").select("*").eq("mode_id", words[1]).execute()
                                 if len(verify_phone_number_mode.data) > 0:
                                     data = supabase.table("chatpawa-users").update({"phone_number_mode": words[1]}).eq("phone_number", from_number).execute()
-                                    response_body = "Le mode "+ words[1]+" est activé -- "+verify_phone_number_mode.data[0]['description']+" -- Vous pouvez poser vos questions."
+                                    response_body = "Le mode "+ words[1]+" est activé -- \n"+verify_phone_number_mode.data[0]['description']
                                     respond_webhook(phone_number_id, token, from_number, response_body)
                                 else:
                                     response_body = "This mode does not exist. Send @list_mode to know all the modes"
