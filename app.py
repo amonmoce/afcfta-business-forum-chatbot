@@ -173,34 +173,34 @@ def webhook():
 
                         ## Duran
                         if phone_number_mode == "duran":
-                            message_array = {
-                                "correcting_answer": [{
+                            message_array = [
+                                {
                                     "role": "user",
-                                    "content": system_message + " "+ msg_body + "\nTeacher: "
-                                }],
-                                "ask_question": [{
+                                    "content": system_message
+                                },
+                                {
                                     "role": "user",
-                                    "content": "Act as an english teacher. Ask a question on the following topic: \"Making friends\". \n Ask the question in english.\n Do not make an introduction as a teacher, just ask the question."
-                                }]
+                                    "content": "Below is the student message"+ msg_body
+                                }
 
-                            }
+                            ]
                             
-                            if msg_body.startswith("1"):
-                                response = "Sur quel sujet vous voulez excercer votre anglais (vous pouvez entrer le sujet en francais)?"
-                                respond_webhook(phone_number_id, token, from_number, response)
+                            # if msg_body.startswith("1"):
+                            #     response = "Sur quel sujet vous voulez excercer votre anglais (vous pouvez entrer le sujet en francais)?"
+                            #     respond_webhook(phone_number_id, token, from_number, response)
                                 
-                            elif msg_body.startswith("2"):
-                                response = chatgpt_completion(message_array["ask_question"])
-                                if response != "error":
-                                    respond_webhook(phone_number_id, token, from_number, response)
-                                    # saving messages
-                                    data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
-                            else:
-                                response = chatgpt_completion(message_array["correcting_answer"])
-                                if response != "error":
-                                    respond_webhook(phone_number_id, token, from_number, response)
-                                    # saving messages
-                                    data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
+                            # elif msg_body.startswith("2"):
+                            #     response = chatgpt_completion(message_array["ask_question"])
+                            #     if response != "error":
+                            #         respond_webhook(phone_number_id, token, from_number, response)
+                            #         # saving messages
+                            #         data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
+                            # else:
+                            response = chatgpt_completion(message_array)
+                            if response != "error":
+                                respond_webhook(phone_number_id, token, from_number, response)
+                                # saving messages
+                                data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
 
 
                         ## Business Forums
