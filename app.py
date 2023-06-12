@@ -177,26 +177,26 @@ def webhook():
 
                         ## Duran
                         if phone_number_mode == "duran":
-                            llm = ChatOpenAI(temperature=1)
-                            memory = ConversationBufferMemory()
-                            prompt_template = system_message + "\n{history}\nHuman: {input}\nAI:"
-                            conversation = ConversationChain(
-                                llm=llm, 
-                                memory = memory,
-                                verbose=False,
-                                prompt=PromptTemplate.from_template(prompt_template)
-                            )
-                            # message_array = [
-                            #     {
-                            #         "role": "user",
-                            #         "content": system_message
-                            #     },
-                            #     {
-                            #         "role": "user",
-                            #         "content": "Below is the student message"+ msg_body
-                            #     }
+                            # llm = ChatOpenAI(temperature=1)
+                            # memory = ConversationBufferMemory()
+                            # prompt_template = system_message + "\n{history}\nHuman: {input}\nAI:"
+                            # conversation = ConversationChain(
+                            #     llm=llm, 
+                            #     memory = memory,
+                            #     verbose=False,
+                            #     prompt=PromptTemplate.from_template(prompt_template)
+                            # )
+                            message_array = [
+                                {
+                                    "role": "user",
+                                    "content": system_message
+                                },
+                                {
+                                    "role": "user",
+                                    "content": msg_body
+                                }
 
-                            # ]
+                            ]
                             
                             # if msg_body.startswith("1"):
                             #     response = "Sur quel sujet vous voulez excercer votre anglais (vous pouvez entrer le sujet en francais)?"
@@ -209,8 +209,8 @@ def webhook():
                             #         # saving messages
                             #         data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
                             # else:
-                            # response = chatgpt_completion(message_array)
-                            response = conversation.predict(input=msg_body)
+                            response = chatgpt_completion(message_array)
+                            # response = conversation.predict(input=msg_body)
                             if response != "error":
                                 respond_webhook(phone_number_id, token, from_number, response)
                                 # saving messages
