@@ -187,13 +187,13 @@ def webhook():
                             #     prompt=PromptTemplate.from_template(prompt_template)
                             # )
                             message_array = [
+                                # {
+                                #     "role": "user",
+                                #     "content": system_message
+                                # },
                                 {
                                     "role": "user",
-                                    "content": system_message
-                                },
-                                {
-                                    "role": "user",
-                                    "content": msg_body
+                                    "content": system_message + "\n\n"+msg_body
                                 }
 
                             ]
