@@ -215,7 +215,25 @@ def webhook():
                                 respond_webhook(phone_number_id, token, from_number, response)
                                 # saving messages
                                 data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
-
+                        
+                        ## Fitness
+                        if phone_number_mode == "fitness":
+                            message_array = [
+                                {
+                                    "role": "system",
+                                    "content": system_message
+                                },
+                                {
+                                    "role": "user",
+                                    "content": msg_body
+                                }
+                            ]
+                            
+                            response = chatgpt_completion(message_array)
+                            if response != "error":
+                                respond_webhook(phone_number_id, token, from_number, response)
+                                # saving messages
+                                data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
 
                         ## Business Forums
                         if phone_number_mode == "business_forum_assistant":
