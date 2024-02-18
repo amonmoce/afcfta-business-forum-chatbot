@@ -157,6 +157,8 @@ def webhook():
                         # ]
                         history_query = supabase.table("chatpawa-users-history").select("*").match({'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
                         
+                        print(history_query)
+
                         if history_query:
                             history = history_query.data[0]['history']
                             history.append({
