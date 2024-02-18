@@ -159,7 +159,7 @@ def webhook():
                         
                         print(history_query)
 
-                        if history_query:
+                        if history_query.data != []:
                             history = history_query.data[0]['history']
                             history.append({
                                     "role": "user",
