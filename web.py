@@ -15,11 +15,22 @@ def set_mode():
     if request.method == "POST":
         # Parse the request body from the POST
         body = request.get_json()
+        if ~body :
+            mode_id = request.form.get('mode_id')
+            mode_system_message = request.form.get('mode_system_message')
+            status = request.form.get('status')
+            description = request.form.get('description')
+        else:
+            mode_id = body["mode_id"]
+            mode_system_message = body["mode_system_message"]
+            status = body["status"]
+            description = body["description"]
+
         print(json.dumps(body, indent=2))
         set_mode = supabase.table("modes-settings").insert({
-            "mode_id": body["mode_id"], 
-            "mode_system_message": body["mode_system_message"], 
-            "status": body["status"],
-            "description": body["description"]
+            "mode_id": mode_id, 
+            "mode_system_message": mode_system_message, 
+            "status": status,
+            "description": description
         }).execute()
     return "ok", 200
