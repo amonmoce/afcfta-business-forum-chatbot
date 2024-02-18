@@ -1,6 +1,7 @@
 import os
 from flask import Blueprint, jsonify, request
 from supabase import create_client, Client
+import json
 
 # Supabase setup
 url: str = os.environ.get("SUPABASE_URL")
@@ -14,6 +15,7 @@ def set_mode():
     if request.method == "POST":
         # Parse the request body from the POST
         body = request.get_json()
+        print(json.dumps(body, indent=2))
         set_mode = supabase.table("modes-settings").insert({
             "mode_id": body["mode_id"], 
             "mode_system_message": body["mode_system_message"], 
