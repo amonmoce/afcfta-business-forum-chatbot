@@ -14,6 +14,7 @@ from supabase import create_client, Client
 from flask import Flask, redirect, render_template, request, url_for, jsonify
 from flask_cors import CORS
 from web import web_bp
+import datetime
 
 app = Flask(__name__)
 app.register_blueprint(web_bp, url_prefix="/web")
@@ -137,27 +138,53 @@ def webhook():
                         phone_number_mode = chatpawa_users.data[0]['phone_number_mode']
                     modes_setting = supabase.table("modes-settings").select("*").eq("mode_id", phone_number_mode).execute()
                     system_message = modes_setting.data[0]['mode_system_message']
+                    
                     print(msg_body)
                     # if message is not a command, is conversation
                     if not msg_body.startswith("@"):
                         
                         ## Africallia
                         # if phone_number_mode == "africallia":
-                        message_array = [
-                            {
-                                "role": "system",
-                                "content": system_message
-                            },
-                            {
-                                "role": "user",
-                                "content": f"{msg_body}"
-                            }
-                        ]
-                        response = chatgpt_completion(message_array)
+                        # message_array = [
+                        #     {
+                        #         "role": "system",
+                        #         "content": system_message
+                        #     },
+                        #     {
+                        #         "role": "user",
+                        #         "content": f"{msg_body}"
+                        #     }
+                        # ]
+                        history_query = supabase.table("chatpawa-users-history").select("*").match({'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
+                        history = history_query.data[0]['history']
+                        
+                        if history:
+                            history.append({
+                                    "role": "user",
+                                    "content": f"{msg_body}"
+                            });
+                        else:
+                            history = []
+                            history.append({
+                                    "role": "system",
+                                    "content": system_message
+                            });
+
+                            history.append({
+                                    "role": "user",
+                                    "content": f"{msg_body}"
+                            });
+                        response = chatgpt_completion(history)
                         if response != "error":
                             respond_webhook(phone_number_id, token, from_number, response)
                             # saving messages
                             data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
+                            history_size = len([e["content"] for e in history])
+                            if len(history) > 2:
+                                history_length = datetime.datetime.now() - history_query.data[0]['created_at']
+                            else:
+                                history_length = 0
+                            history_query = supabase.table("chatpawa-users-history").update({"history": history, "history_size": history_size, "history_length": history_length}).match({'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
 
                         # ## BNVAA
                         # if phone_number_mode == "bnvaa":
