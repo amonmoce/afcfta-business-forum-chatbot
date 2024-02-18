@@ -41,3 +41,24 @@ def respond_webhook(id, tk, destination_number, response):
         },
         headers={"Content-Type": "application/json"},
     )
+
+
+#     response = requests.post(
+#         url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+#         json={
+#             "messaging_product": "whatsapp",
+#             "to": from_number,
+#             "text": {"body": alternative_openai_response.choices[0].text.strip() },
+#         },
+#         headers={"Content-Type": "application/json"},
+#     )
+###
+# response = requests.post(
+#     url="https://graph.facebook.com/v12.0/" + phone_number_id + "/messages?access_token=" + token,
+#     json={
+#         "messaging_product": "whatsapp",
+#         "to": from_number,
+#         "text": {"body": "Ack: " + msg_body},
+#     },
+#     headers={"Content-Type": "application/json"},
+# )
