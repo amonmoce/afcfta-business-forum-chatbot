@@ -184,9 +184,10 @@ def webhook():
                             history_size = len([e["content"] for e in history])
                             if len(history) > 2:
                                 history_length = datetime.datetime.now() - history_query.data[0]['created_at']
+                                history_query = supabase.table("chatpawa-users-history").update({"history": history, "history_size": history_size, "history_length": history_length}).match({'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
                             else:
                                 history_length = 0
-                            history_query = supabase.table("chatpawa-users-history").update({"history": history, "history_size": history_size, "history_length": history_length}).match({'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
+                                history_query = supabase.table("chatpawa-users-history").insert({"history": history, "history_size": history_size, "history_length": history_length, 'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
 
                         # ## BNVAA
                         # if phone_number_mode == "bnvaa":
