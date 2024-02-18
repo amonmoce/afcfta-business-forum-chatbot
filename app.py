@@ -13,8 +13,11 @@ from supabase import create_client, Client
 
 from flask import Flask, redirect, render_template, request, url_for, jsonify
 from flask_cors import CORS
+from web import web_bp
 
 app = Flask(__name__)
+app.register_blueprint(web_bp, url_prefix="/web")
+
 CORS(app)
 
 # Pinecone setup
