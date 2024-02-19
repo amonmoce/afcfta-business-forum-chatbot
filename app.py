@@ -176,19 +176,25 @@ def webhook():
                                     "role": "user",
                                     "content": f"{msg_body}"
                             });
+                           
                         response = chatgpt_completion(history)
                         if response != "error":
                             respond_webhook(phone_number_id, token, from_number, response)
                             # saving messages
                             data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
-                            history_size = len([e["content"] for e in history])
                             print(history, len(history))
-                            if len(history) > 1:
+                            history.append({
+                                    "role": "assistant",
+                                    "content": response
+                            });
+                            history_size = len([e["content"] for e in history])
+                            if history_query.data != []:
                                 history_length = datetime.datetime.now() - history_query.data[0]['created_at']
                                 history_query = supabase.table("chatpawa-users-history").update({"history": history, "history_size": history_size, "history_length": history_length}).match({'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
                             else:
                                 history_length = 0
                                 history_query = supabase.table("chatpawa-users-history").insert({"history": history, "history_size": history_size, "history_length": history_length, 'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
+
 
                         # ## BNVAA
                         # if phone_number_mode == "bnvaa":
