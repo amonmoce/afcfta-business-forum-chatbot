@@ -187,7 +187,8 @@ def webhook():
                                     "role": "assistant",
                                     "content": response
                             });
-                            history_size = len([e["content"] for e in history])
+                            history_content_words = [e["content"].split() for e in history]
+                            history_size = sum([len(content) for content in history_content_words])
                             if history_query.data != []:
                                 history_length = datetime.datetime.now() - history_query.data[0]['created_at']
                                 history_query = supabase.table("chatpawa-users-history").update({"history": history, "history_size": history_size, "history_length": history_length}).match({'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
