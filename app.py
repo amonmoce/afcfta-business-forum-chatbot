@@ -182,7 +182,8 @@ def webhook():
                             # saving messages
                             data = supabase.table("chatpawa-messages").insert({"phone_number_mode":phone_number_mode, "phone_number": from_number, "user_message": msg_body, "assistant_message": response}).execute()
                             history_size = len([e["content"] for e in history])
-                            if len(history) > 2:
+                            print(history, len(history))
+                            if len(history) > 1:
                                 history_length = datetime.datetime.now() - history_query.data[0]['created_at']
                                 history_query = supabase.table("chatpawa-users-history").update({"history": history, "history_size": history_size, "history_length": history_length}).match({'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
                             else:
