@@ -191,8 +191,8 @@ def webhook():
                             history_size = sum([len(content) for content in history_content_words])
                             if history_query.data != []:
                                 d = history_query.data[0]['created_at']
-                                d = datetime.datetime.strptime(d.split()[0],"%Y-%m-%d")
-                                history_length = datetime.datetime.now() - d
+                                d_converted = datetime.datetime.strptime(d.split()[0],"%Y-%m-%d")
+                                history_length = datetime.datetime.now() - d_converted
                                 history_query = supabase.table("chatpawa-users-history").update({"history": history, "history_size": history_size, "history_length": history_length}).match({'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
                             else:
                                 history_length = 0
