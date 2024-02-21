@@ -34,3 +34,11 @@ def set_mode():
             "description": description
         }).execute()
     return "ok", 200
+
+
+
+@web_bp.route("/list", methods=("GET", "POST"))
+def list():
+    if request.method == "GET":
+        list = supabase.table("chatpawa-users-history").select("*").execute()
+        return list, 200
