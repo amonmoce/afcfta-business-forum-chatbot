@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request
 from supabase import create_client, Client
 import json
 from helpers import *
+import pinecone
 
 # Supabase setup
 url: str = os.environ.get("SUPABASE_URL")
