@@ -163,7 +163,7 @@ def webhook():
                         
                         print(history_query)
                         # history is not null and history length is less than 24h (86400 seconds)
-                        if history_query.data != [] and int(history_query.data[0]['history_length']) < 86400:
+                        if history_query.data != [] and float(history_query.data[0]['history_length']) < 86400:
                             history = history_query.data[0]['history']
                             history.append({
                                     "role": "user",
