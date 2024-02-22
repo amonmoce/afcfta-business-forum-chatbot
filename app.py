@@ -201,7 +201,7 @@ def webhook():
                                 history_query = supabase.table("chatpawa-users-history").update({"history": history, "history_size": history_size, "history_length": history_length}).match({'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
                             else:
                                 history_length = 0
-                                history_query = supabase.table("chatpawa-users-history").insert({"history": history, "history_size": history_size, "history_length": history_length, 'user_phone_number': from_number, 'mode': phone_number_mode}).execute()
+                                history_query = supabase.table("chatpawa-users-history").insert({"history": history, "history_size": history_size, "history_length": history_length, 'user_phone_number': from_number, 'mode': phone_number_mode, 'phone_number_id': phone_number_id}).execute()
 
 
                         # ## BNVAA

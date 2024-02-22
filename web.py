@@ -1,8 +1,10 @@
 import os
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, render_template
 from supabase import create_client, Client
 import json
+from helpers import *
 
+token = os.getenv("WHATSAPP_TOKEN")
 # Supabase setup
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
@@ -40,6 +42,19 @@ def set_mode():
 @web_bp.route("/list", methods=("GET", "POST"))
 def list():
     if request.method == "GET":
-        list = supabase.table("chatpawa-users-history").select("user_phone_number").eq("mode", "logtoray").execute()
+        list = supabase.table("chatpawa-users-history").select("user_phone_number, created_at, confirmation, phone_number_id").eq("mode", "logtoray").execute()
         print(list)
-        return json.dumps(list.data), 200
+        url = os.environ.get("URL_TO_CLICK")
+        return render_template("list.html", waiting_list=list.data, url=url)
+        # return json.dumps(list.data), 200
+    
+
+
+@web_bp.route("/confirm", methods=("GET", "POST"))
+def confirm():
+    if request.method == "POST":
+        number = request.get_json()['user_phone_number']
+        phone_number_id = request.get_json()['phone_number_id']
+        confirmation = supabase.table("chatpawa-users-history").update({"confirmation": "oui"}).match({'user_phone_number': number, 'mode': "logtoray"}).execute()
+        respond_webhook(phone_number_id, token, number, "Votre rendez vous a ete confirme pour aujourd'hui. Veuillez arriver dans maximum 1h. Merci bien.")
+        return "ok", 200

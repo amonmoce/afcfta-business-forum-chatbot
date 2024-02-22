@@ -1,0 +1,70 @@
+<!--
+// v0 by Vercel.
+// https://v0.dev/t/YLnA2EDCKDL
+-->
+<div class="rounded-lg border bg-card text-card-foreground shadow-sm" data-v0-t="card">
+    <div class="p-6 flex flex-row items-center justify-between pb-2 space-y-0">
+        <h3 class="whitespace-nowrap tracking-tight text-lg font-medium">
+            Consultation Requests
+        </h3>
+    </div>
+    <div class="p-0">
+        <div class="border-t">
+            <div class="relative w-full overflow-auto">
+                <table class="w-full caption-bottom text-sm">
+                    <thead class="[&amp;_tr]:border-b">
+                        <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0 w-[100px]">
+                                Date</th>
+                            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0 min-w-[150px]">
+                                Numero WhatsApp</th>
+                            <th class="h-12 px-4 align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0 text-right">
+                                Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="[&amp;_tr:last-child]:border-0">
+
+                        {% for item in waiting_list %}
+                        <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                            <td class="p-4 align-middle [&amp;:has([role=checkbox])]:pr-0 font-medium">{{ item.created_at.split('T')[0] }}</td>
+                            <td class="p-4 align-middle [&amp;:has([role=checkbox])]:pr-0">{{ item.user_phone_number }}</td>
+                            <td class="p-4 align-middle [&amp;:has([role=checkbox])]:pr-0 flex justify-end gap-2">
+                                {% if item.confirmation == "non" %}
+                                <button onclick="sendRequest('{{ url }}', '{{ item.user_phone_number }}')" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90">
+                                    Confirm Today</button>
+                                <button class="inline-flex items-center justify-center whitespace-nowrap font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground rounded-lg p-1.5 text-sm"
+                                    type="button" id="radix-:R1srlqfnnja:" aria-haspopup="menu" aria-expanded="false" data-state="closed">
+                                        Custom
+                                    </button> {% else %} Rendez vous confirmé {% endif %}
+
+                            </td>
+
+                        </tr>
+                        {% endfor %}
+
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function sendRequest(url, user_phone_number) {
+        // Use AJAX or fetch to send a request to the server
+        fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    'user_phone_number': user_phone_number
+                }),
+            })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error:', error));
+    }
+</script>
