@@ -40,5 +40,6 @@ def set_mode():
 @web_bp.route("/list", methods=("GET", "POST"))
 def list():
     if request.method == "GET":
-        list = supabase.table("chatpawa-users-history").select("*").execute()
-        return list, 200
+        list = supabase.table("chatpawa-users-history").select("user_phone_number").eq("mode", "logtoray").execute()
+        print(list)
+        return json.dumps(list.data), 200
