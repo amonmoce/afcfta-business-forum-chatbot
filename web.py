@@ -56,5 +56,5 @@ def confirm():
         number = request.get_json()['user_phone_number']
         phone_number_id = request.get_json()['phone_number_id']
         confirmation = supabase.table("chatpawa-users-history").update({"confirmation": "oui"}).match({'user_phone_number': number, 'mode': "logtoray"}).execute()
-        respond_webhook(phone_number_id, token, number, "Votre rendez vous a ete confirme pour aujourd'hui. Veuillez arriver dans maximum 1h. Merci bien.")
+        send_template_message(phone_number_id, token, number, "confirmation_rendez_vous")
         return "ok", 200
