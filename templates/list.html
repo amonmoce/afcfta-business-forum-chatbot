@@ -30,7 +30,7 @@
                             <td class="p-4 align-middle [&amp;:has([role=checkbox])]:pr-0">{{ item.user_phone_number }}</td>
                             <td class="p-4 align-middle [&amp;:has([role=checkbox])]:pr-0 flex justify-end gap-2">
                                 {% if item.confirmation == "non" %}
-                                <button onclick="sendRequest('{{ url }}', '{{ item.user_phone_number }}')" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90">
+                                <button onclick="sendRequest('{{ url }}', '{{ item.user_phone_number }}',  '{{ item.phone_number_id }}')" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90">
                                     Confirm Today</button>
                                 <button class="inline-flex items-center justify-center whitespace-nowrap font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground rounded-lg p-1.5 text-sm"
                                     type="button" id="radix-:R1srlqfnnja:" aria-haspopup="menu" aria-expanded="false" data-state="closed">
@@ -52,7 +52,7 @@
 
 
 <script>
-    function sendRequest(url, user_phone_number) {
+    function sendRequest(url, user_phone_number, phone_number_id) {
         // Use AJAX or fetch to send a request to the server
         fetch(url, {
                 method: 'POST',
@@ -60,7 +60,8 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    'user_phone_number': user_phone_number
+                    'user_phone_number': user_phone_number,
+                    'phone_number_id': phone_number_id
                 }),
             })
             .then(response => response.json())
